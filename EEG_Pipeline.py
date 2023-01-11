@@ -12,6 +12,7 @@ class EEG_Pipeline():
         self.random_state = random_state
         self.ica_n_components = ica_n_components
         self.ica_z_thresh = ica_z_thresh
+        self.epochs = None
     
 
     def filter_raw(self, lo_cut=0.1, hi_cut=30):
@@ -37,6 +38,7 @@ class EEG_Pipeline():
         epochs.average().plot(spatial_colors=True)
         epochs_post_ica = self.ica.apply(epochs.copy())
         epochs_post_ica.average().plot(spatial_colors=True)
+        self.epochs = epochs_post_ica
 
 
 
