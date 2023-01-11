@@ -1,6 +1,7 @@
 import mne
 import sys
 import matplotlib.pyplot as plt
+from autoreject import get_rejection_threshold
 
 def get_raw_eeg():
     if len(sys.argv) != 2:
@@ -19,12 +20,31 @@ def filter_raw(raw, lo_cut=0.1, hi_cut=30):
     filtered_raw = raw.copy().filter(lo_cut, hi_cut)
     return filtered_raw
 
+def segment_data_for_ICE(raw, tstep=1.):
+    events_ica = mne.make_fixed_length_events(raw, duration=tstep)
+    epochs_ica = mne.Epochs(raw, events_ica, tmin=0.0, tmax=tstep, baseline=None, preload=True)
+    return epochs_ica
+
+
+def process_ICA(raw, tstep=1., random_state=42, ica_n_components=.99):
+    epochs_ica = segment_data_for_ICE(raw, tstep)
+    reject = get_rejection_threshold(epochs_ica)
+    ica = mne.preprocessing.ICA(n_components=ica_n_components, random_state=random_state)
+    ica.fit(epochs_ica, reject=reject, tstep=tstep)
+    ica_z_thresh = 1.96
+    print(raw.ch_names)
+    eog_indices, eog_scores = ica.find_bads_eog(raw, ch_name=['Fp1.', 'Af7.'], threshold=ica_z_thresh)
+    ica.exclude = eog_indices
+    ica.plot_scores(eog_scores)
+
+def preprocess_data(raw):
+    fICE_raw = filter_raw(raw=raw, lo_cut=1, hi_cut=30)
+    process_ICA(fICE_raw)
 
 def main():
     raw = get_raw_eeg()
-    raw.plot(block=True, start=15, duration=5)
     f_raw = filter_raw(raw)
-    f_raw.plot(block=True, start=15, duration=5)
+    preprocess_data(raw)
 
 
 
