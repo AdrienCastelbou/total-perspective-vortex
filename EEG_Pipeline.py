@@ -27,12 +27,22 @@ class EEG_Pipeline():
         self.ica.fit(epochs_ica, reject=self.reject, tstep=self.tstep)
         eog_indices, eog_scores = self.ica.find_bads_eog(ica_raw, ch_name=['Fp1.', 'Af7.'], threshold=self.ica_z_thresh)
         self.ica.exclude = eog_indices
-        self.ica.plot_scores(eog_scores)
         return self.ica
     
+
+    def erp_epochs_segmentation(self, tmin=-.200, tmax=1.000, baseline=(None, 0)):
+        events, event_dict = mne.events_from_annotations(self.f_raw)
+        event_mapping = {"Rest": 1, "LeftFist-BothFists": 2, "RightFist-BothFeet": 3}
+        epochs = mne.Epochs(self.f_raw, events, event_mapping, tmin, tmax, baseline=baseline, preload=True)
+        epochs.average().plot(spatial_colors=True)
+        epochs_post_ica = self.ica.apply(epochs.copy())
+        epochs_post_ica.average().plot(spatial_colors=True)
+
+
 
     def preprocess(self):
         f_raw = self.filter_raw()
         self.f_raw = f_raw
         ica_raw = self.filter_raw(lo_cut=1, hi_cut=30)
         ica = self.process_ICA(ica_raw)
+        self.erp_epochs_segmentation()

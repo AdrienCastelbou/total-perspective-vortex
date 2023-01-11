@@ -55,10 +55,6 @@ def main():
     raw = get_raw_eeg()
     pipeline = EEG_Pipeline(raw=raw)
     pipeline.preprocess()
-    erp_epochs_segmentation(raw)
-    f_raw = filter_raw(raw)
-    erp_epochs_segmentation(f_raw)
-    #preprocess_data(raw)
 
 
 
