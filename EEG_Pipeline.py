@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 from autoreject import get_rejection_threshold
 
 class EEG_Pipeline():
-    def __init__(self, raw, tstep=1., random_state=42, ica_n_components=.99, ica_z_thresh=1.96):
+    def __init__(self, raw, name, tstep=1., random_state=42, ica_n_components=.99, ica_z_thresh=1.96):
         self.raw = raw
+        self.name = name
         self.f_raw = None
         self.ica = None
         self.reject = None
@@ -12,7 +13,6 @@ class EEG_Pipeline():
         self.random_state = random_state
         self.ica_n_components = ica_n_components
         self.ica_z_thresh = ica_z_thresh
-        self.epochs = None
     
 
     def filter_raw(self, lo_cut=0.1, hi_cut=30):
@@ -33,13 +33,12 @@ class EEG_Pipeline():
 
     def erp_epochs_segmentation(self, tmin=-.200, tmax=1.000, baseline=(None, 0)):
         events, event_dict = mne.events_from_annotations(self.f_raw)
-        event_mapping = {"Rest": 1, "LeftFist-BothFists": 2, "RightFist-BothFeet": 3}
+        event_mapping = {"Rest": 1, "Match/LF-Fists": 2, "Match/RF-BFeet": 3}
         epochs = mne.Epochs(self.f_raw, events, event_mapping, tmin, tmax, baseline=baseline, preload=True)
         epochs.average().plot(spatial_colors=True)
         epochs_post_ica = self.ica.apply(epochs.copy())
         epochs_post_ica.average().plot(spatial_colors=True)
-        self.epochs = epochs_post_ica
-
+        return epochs_post_ica
 
 
     def preprocess(self):
@@ -47,4 +46,6 @@ class EEG_Pipeline():
         self.f_raw = f_raw
         ica_raw = self.filter_raw(lo_cut=1, hi_cut=30)
         ica = self.process_ICA(ica_raw)
-        self.erp_epochs_segmentation()
+        epochs = self.erp_epochs_segmentation()
+        epochs.save(f"{self.name}-epo.fif")
+        return epochs
