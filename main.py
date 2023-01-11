@@ -2,6 +2,8 @@ import mne
 import sys
 import matplotlib.pyplot as plt
 from autoreject import get_rejection_threshold
+from EEG_Pipeline import EEG_Pipeline
+
 
 def get_raw_eeg():
     if len(sys.argv) != 2:
@@ -32,19 +34,31 @@ def process_ICA(raw, tstep=1., random_state=42, ica_n_components=.99):
     ica = mne.preprocessing.ICA(n_components=ica_n_components, random_state=random_state)
     ica.fit(epochs_ica, reject=reject, tstep=tstep)
     ica_z_thresh = 1.96
-    print(raw.ch_names)
     eog_indices, eog_scores = ica.find_bads_eog(raw, ch_name=['Fp1.', 'Af7.'], threshold=ica_z_thresh)
     ica.exclude = eog_indices
     ica.plot_scores(eog_scores)
+    return ica
 
 def preprocess_data(raw):
     fICE_raw = filter_raw(raw=raw, lo_cut=1, hi_cut=30)
-    process_ICA(fICE_raw)
+    ica = process_ICA(fICE_raw)
+
+def erp_epochs_segmentation(raw):
+    events, event_dict = mne.events_from_annotations(raw)
+    print(event_dict)
+    event_mapping = {"Rest": 1, "LeftFist-BothFists": 2, "RightFist-BothFeet": 3}
+    ig, ax = plt.subplots(figsize=[15, 5])
+    mne.viz.plot_events(events, raw.info['sfreq'], event_id=event_mapping, axes=ax)
+    plt.show()
 
 def main():
     raw = get_raw_eeg()
+    pipeline = EEG_Pipeline(raw=raw)
+    pipeline.preprocess()
+    erp_epochs_segmentation(raw)
     f_raw = filter_raw(raw)
-    preprocess_data(raw)
+    erp_epochs_segmentation(f_raw)
+    #preprocess_data(raw)
 
 
 
