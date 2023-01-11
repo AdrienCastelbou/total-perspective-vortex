@@ -27,8 +27,11 @@ def main():
         StandardScaler(),
         LogisticRegression(solver='lbfgs')  # liblinear is faster than lbfgs
     )
-    clf.fit(X, y)
-    print(cross_val_score(clf, X, y, cv=10))
+    #clf.fit(X, y)
+    #preds = clf.predict(X)
+    #print(y, preds)
+    scores = cross_val_score(clf, X, y, cv=5)
+    print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
 
 
 
