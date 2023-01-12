@@ -8,17 +8,17 @@ import os
 def load_datas():
     raws = []
     names = []
-    if len(sys.argv) != 2:
-        raise Exception("Error : Wrong number of arguments -> Usage : python3 main.py path/to/file.edf (can be a directory)")
-    path = sys.argv[1]
-    if os.path.isfile(path):
-        raws.append(mne.io.read_raw_edf(path, preload=True))
-        names.append(os.path.basename(path))
-    else:
-        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-        for f in files:
-            raws.append(mne.io.read_raw_edf(path + "/" + f, preload=True))
-            names.append(f)
+    if len(sys.argv) < 2:
+        raise Exception("Error : Wrong number of arguments -> Usage : python3 main.py path/to/file.edf path/to/directory")
+    for fpath in sys.argv[1:]:
+        if os.path.isfile(fpath):
+            raws.append(mne.io.read_raw_edf(fpath, preload=True))
+            names.append(os.path.basename(fpath))
+        else:
+            files = [f for f in os.listdir(fpath) if os.path.isfile(os.path.join(fpath, f))]
+            for f in files:
+                raws.append(mne.io.read_raw_edf(fpath + "/" + f, preload=True))
+                names.append(f)
     return raws, names
 
 

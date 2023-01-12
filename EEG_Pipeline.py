@@ -36,8 +36,7 @@ class EEG_Pipeline():
 
     def erp_epochs_segmentation(self, tmin=-.200, tmax=1.000, baseline=(None, 0)):
         events, event_dict = mne.events_from_annotations(self.f_raw)
-        event_mapping = {"Rest": 1, "Match/LF-Fists": 2, "Match/RF-BFeet": 3}
-        epochs = mne.Epochs(self.f_raw, events, event_mapping, tmin, tmax, baseline=baseline, preload=True)
+        epochs = mne.Epochs(self.f_raw, events, event_dict, tmin, tmax, baseline=baseline, preload=True)
         if self.display in ["epochs", "all"]:
             epochs.average().plot(spatial_colors=True)
         epochs_post_ica = self.ica.apply(epochs.copy())
