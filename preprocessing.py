@@ -31,7 +31,14 @@ def show_psd(raw, fmax=80):
 def main():
     raws, names = load_datas()
     for raw, name in zip(raws, names):
-        pipeline = EEG_Pipeline(raw, name, display=None)
+        chs = raw.info['ch_names']
+        chs_mapping = {ch: ch.split(".")[0] for ch in chs }
+        mne.rename_channels(raw.info, chs_mapping)
+        mne.datasets.eegbci.standardize(raw)
+        raw.set_montage('standard_1020')
+        raw.plot_sensors(show_names=True)
+        plt.show()
+        pipeline = EEG_Pipeline(raw, name)
         pipeline.preprocess()
 
 
