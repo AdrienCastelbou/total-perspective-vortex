@@ -1,7 +1,7 @@
 import mne
 import sys
 import matplotlib.pyplot as plt
-from EEG_Pipeline import EEG_Pipeline
+from EEG_Pipeline import *
 import os
 
 
@@ -31,8 +31,7 @@ def show_psd(raw, fmax=80):
 def main():
     raws, names = load_datas()
     for raw, name in zip(raws, names):
-        pipeline = EEG_Pipeline(raw, name)
-        pipeline.preprocess()
+        preprocess_pipeline(raw)
 
 
 if __name__ == "__main__":

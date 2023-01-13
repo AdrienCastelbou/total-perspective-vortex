@@ -5,7 +5,7 @@ import numpy as np
 
 class EEG_Pipeline():
     def __init__(self, raw, name, random_state=42, display=["all"], filtered_save="filtered", epochs_save="epochs"):
-        self.raw = raw
+        self.raw = raw.copy()
         self.name = name
         self.f_raw = None
         self.reject = None
@@ -59,3 +59,25 @@ class EEG_Pipeline():
         epochs.save(f"{self.epochs_save}/{self.name}-epo.fif", overwrite=True)
         self.f_raw.save(f"{self.filter_save}/{self.name}-filt.fif", overwrite=True)
         return epochs
+
+
+def setup_channels(raw):
+    ch_names = raw.info['ch_names']
+    chs_mapping = {ch: ch.split(".")[0] for ch in ch_names }
+    mne.rename_channels(raw.info, chs_mapping)
+    mne.datasets.eegbci.standardize(raw)
+    raw.set_montage('standard_1020')
+    return raw
+
+def filter_raw(raw, lo_cut=0.1, hi_cut=40):
+    return raw.copy().filter(lo_cut, hi_cut)
+
+def preprocess_pipeline(raw, tmin=-1, tmax=4):
+    setup_channels(raw)
+    f_raw = filter_raw(raw, 7., 30.)
+    events, event_dict = mne.events_from_annotations(raw)
+    picks = mne.pick_types(f_raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
+    epochs = mne.Epochs(f_raw, events, event_dict, tmin, tmax, proj=True, picks=picks, baseline=None, preload=True)
+    epochs_train = epochs.copy().crop(tmin=1., tmax=2.)
+    labels = epochs.events[:, -1]
+    print(labels)
