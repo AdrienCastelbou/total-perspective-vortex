@@ -31,7 +31,7 @@ def show_psd(raw, fmax=80):
 def main():
     raws, names = load_datas()
     for raw, name in zip(raws, names):
-        pipeline = EEG_Pipeline(raw, name, display=["montage"])
+        pipeline = EEG_Pipeline(raw, name)
         pipeline.preprocess()
 
 
