@@ -5,7 +5,9 @@ import os
 from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
-
+import numpy as np
+from mne.decoding import CSP
+from scipy.linalg import eigh
 
 def load_raw_eeg():
     raws = []
@@ -19,7 +21,7 @@ def load_raw_eeg():
         else:
             files = [f for f in os.listdir(fpath) if os.path.isfile(os.path.join(fpath, f))]
             for f in files:
-                raws.append(mne.io.read_raw_edf(fpath + "/" + f, preload=True))
+                raws.append(mne.io.read_raw_edf(fpath + "/" + f, preload=True, verbose=False))
                 names.append(f)
     return raws, names
 
@@ -107,10 +109,29 @@ def train(epochs):
     plt.legend(loc='lower right')
     plt.show()
 
+
+def get_csp(epochs):
+    labels = epochs.events[:,-1]
+    csp = CSP()
+    v = csp.fit_transform(epochs.get_data(), labels)
+    print(v, v.shape)
+
+def calculate_csp(epochs):
+    labels = epochs.events[:,-1]
+    epochs_1 = np.transpose(epochs["T1"].get_data(), [1, 0, 2]).reshape(64, -1)
+    epochs_2 = np.transpose(epochs["T2"].get_data(), [1, 0, 2]).reshape(64, -1)
+    cov_1 = np.cov(epochs_1)
+    cov_2 = np.cov(epochs_2)
+    eigvals, eigvecs = eigh(cov_1, cov_2)
+    w = eigvecs.T[:, 0]
+
+
+
 def main():
     raws, names = load_raw_eeg()
     epochs = preprocess_pipeline(raws)
-    train(epochs)
+    get_csp(epochs["T1", "T2"])
+    #calculate_csp(epochs["T1", "T2"])
 
 
 
