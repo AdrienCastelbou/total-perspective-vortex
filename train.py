@@ -7,7 +7,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 import numpy as np
 from mne.decoding import CSP
-from scipy.linalg import eigh
+from scipy import linealg
 
 def load_raw_eeg():
     raws = []
@@ -112,26 +112,74 @@ def train(epochs):
 
 def get_csp(epochs):
     labels = epochs.events[:,-1]
-    csp = CSP()
+    csp = CSP(n_components=2)
     v = csp.fit_transform(epochs.get_data(), labels)
     print(v, v.shape)
+    #t = csp.transform(epochs)
+    #print(t, t.shape)
+    print(csp.filters_.shape)
 
 def calculate_csp(epochs):
     labels = epochs.events[:,-1]
+    print(epochs.get_data().shape)
     epochs_1 = np.transpose(epochs["T1"].get_data(), [1, 0, 2]).reshape(64, -1)
     epochs_2 = np.transpose(epochs["T2"].get_data(), [1, 0, 2]).reshape(64, -1)
     cov_1 = np.cov(epochs_1)
     cov_2 = np.cov(epochs_2)
-    eigvals, eigvecs = eigh(cov_1, cov_2)
-    w = eigvecs.T[:, 0]
+    eigvals, eigvecs = eig(cov_1, cov_2)
+    D_matrix = np.diag(np.sort(eigvals)[::-1])
+
+class CSP():
+    def __init__(self, n_components=4) -> None:
+        self.classes_ = None
+        self.filters_ = None
+        self.n_components_ = n_components
+    
+
+    def _decompose_covs(self, covs, weights):
+        n_classes = len(self.classes_)
+        if n_classes == 2:
+            return linealg.eigh(covs[0], covs[0] + covs[1])
+        return linealg.eigh(covs[0], covs[1])
+    
+    def _compute_covs(self, X, y):
+        _, n_channels, _ = X.shape
+        covs = []
+        weights = []
+        for curr_class in self.classes_:
+            x_class = X[y == curr_class]
+            x_class = np.transpose(x_class, [1, 0, 2]).reshape(n_channels, -1)
+            covs.append(np.cov(x_class))
+            weights.append(x_class.shape[0])
+        return covs, weights
+    
+    def _order_components(self, eigvals, eigvecs):
+        n_classes = len(self.classes_)
+        if n_classes == 2:
+            idx = np.argsort(np.abs(eigvals - 0.5))[::-1]
 
 
+    def fit(self, X, y):
+        n_epochs, n_channels, n_times = X.shape
+        self.classes_ = np.unique(y)
+        covs, weights = self._compute_covs(X, y)
+        eigvals, eigvecs = self._decompose_covs(covs, weights)
+        idx = self._order_components(eigvals, eigvecs)
+        return self
+    
+        
+
+    def transform(self, X):
+        return self.filters_ @ X
+
+    def transform_fit(self, X, y):
+        return self.fit(X, y).transform(X)
 
 def main():
     raws, names = load_raw_eeg()
     epochs = preprocess_pipeline(raws)
-    get_csp(epochs["T1", "T2"])
-    #calculate_csp(epochs["T1", "T2"])
+    csp_ = CSP()
+    csp_.fit(epochs.get_data(), epochs.events[:,-1])
 
 
 
