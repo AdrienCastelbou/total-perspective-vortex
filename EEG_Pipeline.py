@@ -76,6 +76,7 @@ def preprocess_pipeline(raw, tmin=-1, tmax=4):
     setup_channels(raw)
     f_raw = filter_raw(raw, 7., 30.)
     events, event_dict = mne.events_from_annotations(raw)
+    print(event_dict)
     picks = mne.pick_types(f_raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
     epochs = mne.Epochs(f_raw, events, event_dict, tmin, tmax, proj=True, picks=picks, baseline=None, preload=True)
     epochs_train = epochs.copy().crop(tmin=1., tmax=2.)

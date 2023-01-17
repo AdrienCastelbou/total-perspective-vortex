@@ -7,7 +7,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 import numpy as np
 from mne.decoding import CSP
-
+from const import *
 
 def load_raw_eeg():
     raws = []
@@ -16,7 +16,7 @@ def load_raw_eeg():
         raise Exception("Error : Wrong number of arguments -> Usage : python3 main.py path/to/file.edf path/to/directory")
     for fpath in sys.argv[1:]:
         if os.path.isfile(fpath):
-            raws.append(mne.io.read_raw_edf(fpath, preload=True))
+            raws.append(mne.io.read_raw_edf(fpath))
             names.append(os.path.basename(fpath))
         else:
             files = [f for f in os.listdir(fpath) if os.path.isfile(os.path.join(fpath, f))]
@@ -37,18 +37,27 @@ def setup_channels(raw):
 def filter_raw(raw, lo_cut=0.1, hi_cut=40):
     return raw.copy().filter(lo_cut, hi_cut)
 
-def get_epochs(raw, tmin=-1, tmax=4):
-    events, event_dict = mne.events_from_annotations(raw)
+def get_epochs(raw, dict, annot_dict, tmin=-1, tmax=4):
+    events, _ = mne.events_from_annotations(raw, annot_dict)
     picks = mne.pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
-    epochs = mne.Epochs(raw, events, event_dict, tmin, tmax, proj=True, picks=picks, baseline=None, preload=True)
+    epochs = mne.Epochs(raw, events, dict, tmin, tmax, proj=True, picks=picks, baseline=None, preload=True)
     return epochs
 
-def preprocess_pipeline(raws, tmin=-1, tmax=4):
+def get_event_dictionnary(name):
+    n_experimental_run = int(name[name.find("R") + len("R"): name.find(".edf")])
+    if n_experimental_run in [3, 4, 7, 8, 11, 12]:
+        return task_one_two_dict, task_one_two_annot_dict
+    elif n_experimental_run in [5, 6, 9, 10, 13, 14]:
+        return task_three_four_dict, task_three_four_annot_dict
+    return rest_dict, rest_annot_dict
+
+def preprocess_pipeline(raws, names, tmin=-1, tmax=4):
     epochs_list = []
-    for raw in raws:
+    for raw, name in zip(raws, names):
+        event_dict, annot_dict = get_event_dictionnary(name)
         setup_channels(raw)
         f_raw = filter_raw(raw, 7., 30.)
-        epochs_list.append(get_epochs(f_raw, tmin, tmax))
+        epochs_list.append(get_epochs(f_raw,event_dict, annot_dict, tmin, tmax))
     epochs = mne.concatenate_epochs(epochs_list, True)
     return epochs
 
@@ -215,7 +224,8 @@ class ICA():
 
 def main():
     raws, names = load_raw_eeg()
-    epochs = preprocess_pipeline(raws)
+    epochs = preprocess_pipeline(raws, names)
+    print(epochs, epochs.events[:,-1])
     train(epochs)
 
 
