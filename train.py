@@ -7,7 +7,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 import numpy as np
 from mne.decoding import CSP
-from scipy import linealg
+
 
 def load_raw_eeg():
     raws = []
@@ -129,57 +129,94 @@ def calculate_csp(epochs):
     eigvals, eigvecs = eig(cov_1, cov_2)
     D_matrix = np.diag(np.sort(eigvals)[::-1])
 
-class CSP():
-    def __init__(self, n_components=4) -> None:
+
+class ICA():
+    def __init__(self) -> None:
         self.classes_ = None
-        self.filters_ = None
-        self.n_components_ = n_components
-    
+        self.filter_ = None
 
-    def _decompose_covs(self, covs, weights):
-        n_classes = len(self.classes_)
-        if n_classes == 2:
-            return linealg.eigh(covs[0], covs[0] + covs[1])
-        return linealg.eigh(covs[0], covs[1])
-    
-    def _compute_covs(self, X, y):
-        _, n_channels, _ = X.shape
-        covs = []
-        weights = []
-        for curr_class in self.classes_:
-            x_class = X[y == curr_class]
-            x_class = np.transpose(x_class, [1, 0, 2]).reshape(n_channels, -1)
-            covs.append(np.cov(x_class))
-            weights.append(x_class.shape[0])
-        return covs, weights
-    
-    def _order_components(self, eigvals, eigvecs):
-        n_classes = len(self.classes_)
-        if n_classes == 2:
-            idx = np.argsort(np.abs(eigvals - 0.5))[::-1]
 
+    def center_(self, X):
+        mean = np.mean(X, axis=1, keepdims=True)
+        centered =  X - mean
+        return centered, mean
+
+    def whiten_(self, X):
+        cov = np.cov(X)
+        U, S, V = np.linalg.svd(cov)
+        d = np.diag(1.0 / np.sqrt(S))
+        wM = U @ d @ U.T
+        Xw = wM @ X
+        print(np.cov(wM))
+        return Xw, wM
+
+    def kurtosis(x):
+        n = np.shape(x)[0]
+        mean = np.sum((x**1)/n) # Calculate the mean
+        var = np.sum((x-mean)**2)/n # Calculate the variance
+        skew = np.sum((x-mean)**3)/n # Calculate the skewness
+        kurt = np.sum((x-mean)**4)/n # Calculate the kurtosis
+        kurt = kurt/(var**2)-3
+        return kurt, skew, var, mean
+    
+    def fastIca_(self, signals,  alpha = 1, thresh=1e-8, iterations=100):
+        m, n = signals.shape
+        # Initialize random weights
+        print("start")
+        W = np.random.rand(m, m)
+        for c in range(m):
+                w = W[c, :].copy().reshape(m, 1)
+                w = w/ np.sqrt((w ** 2).sum())
+                i = 0
+                lim = 100
+                while ((lim > thresh) and (i < iterations)):
+                    # Dot product of weight and signal
+                    ws = np.dot(w.T, signals)
+                    # Pass w*s into contrast function g
+                    wg = np.tanh(ws * alpha).T
+                    # Pass w*s into g'
+                    wg_ = (1 - np.square(np.tanh(ws))) * alpha
+                    # Update weights
+                    wNew = (signals * wg.T).mean(axis=1) - wg_.mean() * w.squeeze()
+                    # Decorrelate weights              
+                    wNew = wNew - np.dot(np.dot(wNew, W[:c].T), W[:c])
+                    wNew = wNew / np.sqrt((wNew ** 2).sum())
+                    # Calculate limit condition
+                    lim = np.abs(np.abs((wNew * w).sum()) - 1)
+                        
+                    # Update weights
+                    w = wNew
+                        
+                    # Update counter
+                    i += 1
+                W[c, :] = w.T
+        print('end')
+        return W
 
     def fit(self, X, y):
         n_epochs, n_channels, n_times = X.shape
-        self.classes_ = np.unique(y)
-        covs, weights = self._compute_covs(X, y)
-        eigvals, eigvecs = self._decompose_covs(covs, weights)
-        idx = self._order_components(eigvals, eigvecs)
-        return self
+        X = np.transpose(X, [1, 0, 2]).reshape(n_channels, -1)
+        Xc, meanX = self.center_(X)
+        # Whiten mixed signals
+        Xw, whiteM = self.whiten_(Xc)
+        # Run the ICA to estimate W
+        W = self.fastIca_(Xw,  alpha=1)
+        #Un-mix signals using W
+        unMixed = Xw.T.dot(W.T)
+        # Subtract mean from the unmixed signals
+        fig, ax = plt.subplots(1, 1, figsize=[18, 10])
+        ax.plot(unMixed)
+        fig, ax = plt.subplots(1, 1, figsize=[18, 5])
+        ax.plot(Xc)        
+        plt.show()
     
-        
 
-    def transform(self, X):
-        return self.filters_ @ X
 
-    def transform_fit(self, X, y):
-        return self.fit(X, y).transform(X)
 
 def main():
     raws, names = load_raw_eeg()
     epochs = preprocess_pipeline(raws)
-    csp_ = CSP()
-    csp_.fit(epochs.get_data(), epochs.events[:,-1])
+    train(epochs)
 
 
 
