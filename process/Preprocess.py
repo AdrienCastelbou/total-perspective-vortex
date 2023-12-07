@@ -14,7 +14,7 @@ class Preprocess:
     def run(self, filename):
         raw = mne.io.read_raw_edf(filename, preload=True)
         self.setup_channels(raw)
-        rawFilt = raw.copy().filter(0.1, 30)
+        rawFilt = raw.copy().filter(7, 30)
         if self.vizualize_ == True:
             raw.compute_psd(fmax=5).plot()
             rawFilt.compute_psd(fmax=5).plot()
