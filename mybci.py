@@ -4,20 +4,23 @@ from enums.process import Process
 from process.Preprocess import Preprocess
 from utils.experiments import experiments
 import mne
-from mne.decoding import UnsupervisedSpatialFilter
-from mne.preprocessing import ICA
-from mne.io import concatenate_raws, read_raw_edf
-from sklearn.decomposition import PCA
 import numpy as np
 
 def preprocess_data(filenames, vizualize=False):
-    preprocessor = Preprocess(True)
+    preprocessor = Preprocess(vizualize)
     raw = preprocessor.run(filenames)
     return raw
     
 
 def train(filename):
+    tmin, tmax = -1.0, 4.0
+
     raw = preprocess_data(filename)
+    events, _ = mne.events_from_annotations(raw)
+    picks = mne.pick_types(raw.info, eeg=True, meg=False, stim=False, eog=False, exclude="bads")
+    epochs = mne.Epochs(raw, events,tmin=tmin, tmax=tmax, picks=picks, proj=True, baseline=None, preload=True)
+    epochs_train = epochs.copy().crop(tmin=1.0, tmax=2.0)
+    labels = epochs.events[:, -1] - 2
     return
     raw_data = raw.get_data()
     print(raw_data.shape)
