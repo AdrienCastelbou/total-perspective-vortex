@@ -4,3 +4,4 @@
 /epochs/
 /physionet.org/
 /.old/
+*/__pycache__/

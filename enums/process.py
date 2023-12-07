@@ -8,3 +8,4 @@ class Process(str, Enum, metaclass=MyProcessMeta):
     PREPROCESS  = 'preprocess'
     TRAIN       = 'train'
     TEST        = 'test'
+    ALL         =  'all'
