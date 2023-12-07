@@ -11,8 +11,8 @@ class Preprocess:
         montage = mne.channels.make_standard_montage('standard_1020')
         raw.set_montage(montage, match_case=False)
 
-    def run(self, filename):
-        raw = mne.io.read_raw_edf(filename, preload=True)
+    def run(self, filenames):
+        raw = mne.io.concatenate_raws([mne.io.read_raw_edf(f, preload=True) for f in filenames])
         self.setup_channels(raw)
         rawFilt = raw.copy().filter(7, 30)
         if self.vizualize_ == True:

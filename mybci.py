@@ -6,17 +6,19 @@ from utils.experiments import experiments
 import mne
 from mne.decoding import UnsupervisedSpatialFilter
 from mne.preprocessing import ICA
+from mne.io import concatenate_raws, read_raw_edf
 from sklearn.decomposition import PCA
 import numpy as np
 
 def preprocess_data(filenames, vizualize=False):
-    preprocessor = Preprocess(vizualize)
+    preprocessor = Preprocess(True)
     raw = preprocessor.run(filenames)
     return raw
     
 
 def train(filename):
     raw = preprocess_data(filename)
+    return
     raw_data = raw.get_data()
     print(raw_data.shape)
     events, event_dict = mne.events_from_annotations(raw)
@@ -78,7 +80,6 @@ def main():
     except Exception as e:
         print(e)
         return
-    return
     if process == Process.PREPROCESS:
         preprocess_data(filenames, True)
     elif process == Process.TRAIN:
