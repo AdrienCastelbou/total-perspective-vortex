@@ -9,15 +9,13 @@ from sklearn.pipeline import Pipeline
 import pickle
 
 class Experiment:
-    subject     = None
-    task        = None
-    filenames   = []
-    run         = None 
-    model       = None
-
     def __init__(self, subject, run, getAllRuns) -> None:
-        self.subject = subject
-        self.run     = run
+        self.task        = None
+        self.filenames   = []
+        self.run         = None 
+        self.model       = None
+        self.subject     = subject
+        self.run         = run
         self.get_paths(getAllRuns)
 
     

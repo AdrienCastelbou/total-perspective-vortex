@@ -3,7 +3,7 @@ import mne
 import numpy as np
 from enums.process import Process
 from utils.Experiment import Experiment
-
+ 
 
 def train_all_models():
     means = []
@@ -27,6 +27,7 @@ def train_all_models():
 
 
 def train_one_model(experiment):
+    print(experiment.filenames)
     scores = experiment.train()
     print(scores)
     print(f"cross_val_score: {np.mean(scores)}")
