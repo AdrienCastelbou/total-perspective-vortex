@@ -27,7 +27,6 @@ def train_all_models():
 
 
 def train_one_model(experiment):
-    print(experiment.filenames)
     scores = experiment.train()
     print(scores)
     print(f"cross_val_score: {np.mean(scores)}")
@@ -40,8 +39,14 @@ def get_process():
         return Process.ALL, None
     elif len(args) != 3 or args[2] not in Process:
         raise Exception("Error: wrong usage -> python mybci.py [subject id (int)] [experiment id (int)] [process (preprocess/train/predict)]\nExample : python mybci.py 1 14 train")
-    experiment = Experiment(args[0], args[1], args[2] != Process.PREPROCESS)
+    getAllRuns = args[2] == Process.TRAIN
+    experiment = Experiment(args[0], args[1], getAllRuns)
     return args[2], experiment
+
+def run_prediction(experiment):
+    if (experiment.get_model() == False):
+        raise Exception("model file does not exist")
+    experiment.predict()
 
 
 def main():
@@ -54,6 +59,8 @@ def main():
             train_one_model(experiment)
         elif process == Process.ALL:
             train_all_models()
+        elif process == Process.PREDICT:
+            run_prediction(experiment)
     except Exception as e:
         print(e)
         return

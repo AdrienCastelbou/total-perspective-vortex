@@ -6,7 +6,9 @@ from mne.decoding import CSP
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
 import pickle
+import numpy as np
 
 class Experiment:
     def __init__(self, subject, run, getAllRuns) -> None:
@@ -18,7 +20,16 @@ class Experiment:
         self.run         = run
         self.get_paths(getAllRuns)
 
-    
+
+    def get_model(self):
+        modelFile = f"models/S{self.subject}{self.task}"
+        if os.path.isfile(modelFile):
+            with open(modelFile, 'rb') as f:
+                self.model = pickle.load(f)
+            return True
+        return False
+        
+
     def get_paths(self, getAllRuns):
         runs = []
         for task in experiments:
@@ -67,11 +78,35 @@ class Experiment:
         csp = CSP(n_components=6, reg=None, log=True, norm_trace=False)
 
         clf = Pipeline([("CSP", csp), ("LDA", lda)])
+        clf.fit(epochs_data_train, labels)
         scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=None)
-        self.model = lda
+        self.model = clf
 
         self.save_model()
         return scores
     
+    def predict(self):
+        tmin, tmax = -1.0, 4.0
+
+        raw = self.preprocess_data()
+        events, _ = mne.events_from_annotations(raw)
+        picks = mne.pick_types(raw.info, eeg=True, meg=False, stim=False, eog=False, exclude="bads")
+        epochs = mne.Epochs(raw, events,tmin=tmin, tmax=tmax, picks=picks, proj=True, baseline=None, preload=True)
+        X = epochs.get_data()
+        y = epochs.events[:, -1]
+        indices = np.arange(len(X))
+        np.random.shuffle(indices)
+        X = X[indices]
+        y = y[indices]
+        preds = []
+
+        print("epoch nb: [prediction] [truth] equal?")
+        for i in range(len(X)):
+            Xi = X[i][np.newaxis, ...]
+            pred = self.model.predict(Xi)
+            print(f"epoch {i}:  {pred}    [{y[i]}] {pred[0] == y[i]}")
+            preds.append(pred)
+        print(f"Accuracy: {accuracy_score(preds, y)}")
+
     def save_model(self):
         pickle.dump(self.model, open(f"models/S{self.subject}{self.task}", 'wb'))
