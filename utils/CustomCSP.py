@@ -28,20 +28,18 @@ class CustomCSP(BaseEstimator, TransformerMixin):
         eigenvalues, eigenvectors = [], []
         for idx, cov in enumerate(covs):
             for iidx, compCov in enumerate(covs):
-                if idx != iidx:
+                if idx < iidx:
                     eigVals, eigVects = linalg.eig(cov, cov + compCov)
-                    #sorted_indices = np.argsort(eigVals)[::-1]
-                    #eigenvalues.append(eigVals[sorted_indices])
-                    #eigenvectors.append(eigVects[:, sorted_indices])
-                    eigenvalues.append(eigVals)
-                    eigenvectors.append(eigVects)
+                    sorted_indices = np.argsort(np.abs(eigVals - 0.5))[::-1]
+                    eigenvalues.append(eigVals[sorted_indices])
+                    eigenvectors.append(eigVects[:, sorted_indices])
         return eigenvalues, eigenvectors
 
 
 
-    def pick_filters(self, eigenvalues, eigenvectors):
+    def pick_filters(self, eigenvectors):
         filters = []
-        for EigVals, EigVects in zip(eigenvalues, eigenvectors):
+        for EigVects in eigenvectors:
             if filters == []:
                 filters = EigVects[:, :self.n_components]
             else:
@@ -52,13 +50,14 @@ class CustomCSP(BaseEstimator, TransformerMixin):
     def fit(self, X, y):
         covs = self.calculate_cov_(X, y)
         eigenvalues, eigenvectors = self.calculate_eig_(covs)
-        self.pick_filters(eigenvalues, eigenvectors)
+        self.pick_filters(eigenvectors)
         X = np.asarray([np.dot(self.filters, epoch) for epoch in X])
         X = (X ** 2).mean(axis=2)
 
         # Standardize features
         self.mean = X.mean(axis=0)
         self.std = X.std(axis=0)
+
 
     def transform(self, X):
         X = np.asarray([np.dot(self.filters, epoch) for epoch in X])
