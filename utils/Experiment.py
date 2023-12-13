@@ -13,7 +13,7 @@ from utils.CustomCSP import CustomCSP
 
 
 class Experiment:
-    def __init__(self, subject, run, getAllRuns) -> None:
+    def __init__(self, subject, run, getAllRuns = False) -> None:
         self.task        = None
         self.filenames   = []
         self.run         = None 
