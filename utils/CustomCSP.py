@@ -6,17 +6,16 @@ class CustomCSP(BaseEstimator, TransformerMixin):
     def __init__(self, n_components=4):
         self.n_components   = n_components
         self.filters        = None
-        self.labels         = None
+        self.n_classes         = None
         self.mean           = None
         self.std            = None
 
 
     def calculate_cov_(self, X, y):
-        self.labels = np.unique(y)
         _, n_channels, _ = X.shape
         covs = []
 
-        for l in self.labels:
+        for l in self.n_classes:
             lX = X[np.where(y == l)]
             lX = lX.transpose([1, 0, 2])
             lX = lX.reshape(n_channels, -1)
@@ -48,6 +47,10 @@ class CustomCSP(BaseEstimator, TransformerMixin):
 
 
     def fit(self, X, y):
+        self.n_classes = np.unique(y)
+
+        if (len(self.n_classes) < 2):
+            raise ValueError("n_classes must be >= 2")
         covs = self.calculate_cov_(X, y)
         eigenvalues, eigenvectors = self.calculate_eig_(covs)
         self.pick_filters(eigenvectors)

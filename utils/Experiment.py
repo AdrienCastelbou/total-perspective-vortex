@@ -75,7 +75,6 @@ class Experiment:
         cv = ShuffleSplit(10, test_size=0.2, random_state=42)
 
         customCsp = CustomCSP()
-        X = customCsp.fit_transform(epochs_data_train, labels)
         lda = LinearDiscriminantAnalysis()
         clf = Pipeline([("CSP", customCsp), ("LDA", lda)])
         clf.fit(epochs_data_train, labels)
