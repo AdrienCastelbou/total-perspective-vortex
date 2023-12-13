@@ -45,7 +45,7 @@ class CustomCSP(BaseEstimator, TransformerMixin):
             if filters == []:
                 filters = EigVects[:, :self.n_components]
             else:
-                filters = np.concatenate([filters, EigVects[:, :2]], axis=1)
+                filters = np.concatenate([filters, EigVects[:, :self.n_components]], axis=1)
         self.filters = filters.T
 
 
