@@ -9,6 +9,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 import pickle
 import numpy as np
+from utils.CustomCSP import CustomCSP
+
 
 class Experiment:
     def __init__(self, subject, run, getAllRuns) -> None:
@@ -69,15 +71,13 @@ class Experiment:
         labels = epochs.events[:, -1]
 
         scores = []
-        epochs_data = epochs.get_data()
         epochs_data_train = epochs_train.get_data()
         cv = ShuffleSplit(10, test_size=0.2, random_state=42)
-        cv_split = cv.split(epochs_data_train)
 
+        customCsp = CustomCSP()
+        X = customCsp.fit_transform(epochs_data_train, labels)
         lda = LinearDiscriminantAnalysis()
-        csp = CSP(n_components=6, reg=None, log=True, norm_trace=False)
-
-        clf = Pipeline([("CSP", csp), ("LDA", lda)])
+        clf = Pipeline([("CSP", customCsp), ("LDA", lda)])
         clf.fit(epochs_data_train, labels)
         scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=None)
         self.model = clf

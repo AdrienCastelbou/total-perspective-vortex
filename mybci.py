@@ -9,7 +9,7 @@ def train_all_models():
     means = []
     for run in range(3, 7):
         experiment_means = []
-        for subject in range(1, 36):
+        for subject in range(1, 39):
             experiment = Experiment(str(subject), str(run), True)
             scores = experiment.train()
             mean = np.mean(scores)
@@ -50,7 +50,7 @@ def run_prediction(experiment):
 
 
 def main():
-    try:
+    #try:
         mne.set_log_level('WARNING')
         process, experiment = get_process()
         if process == Process.PREPROCESS:
@@ -61,8 +61,8 @@ def main():
             train_all_models()
         elif process == Process.PREDICT:
             run_prediction(experiment)
-    except Exception as e:
-        print(e)
+    #except Exception as e:
+    #    print(e)
         return
     
 
