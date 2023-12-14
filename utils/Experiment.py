@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 import pickle
 import numpy as np
 from utils.CustomCSP import CustomCSP
-
+from utils.annotations import annotations
 
 class Experiment:
     def __init__(self, subject, run, getAllRuns = False) -> None:
@@ -55,7 +55,7 @@ class Experiment:
 
 
     def preprocess_data(self, vizualize=False):
-        preprocessor = Preprocess(vizualize)
+        preprocessor = Preprocess(vizualize, annotations[self.task])
         raw = preprocessor.run(self.filenames)
         return raw
 
@@ -73,7 +73,6 @@ class Experiment:
         scores = []
         epochs_data_train = epochs_train.get_data()
         cv = ShuffleSplit(10, test_size=0.2, random_state=42)
-
         customCsp = CustomCSP()
         lda = LinearDiscriminantAnalysis()
         clf = Pipeline([("CSP", customCsp), ("LDA", lda)])

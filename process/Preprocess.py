@@ -1,9 +1,11 @@
 import mne
 
 class Preprocess:
-    def __init__(self, vizualize=False) -> None:
+    def __init__(self, vizualize=False, annotations=None) -> None:
         self.vizualize_ = vizualize
+        self.annotations = annotations
 
+        
     def setup_channels(self, raw):
         chNames = raw.info["ch_names"]
         chMapping = {ch: ch.split('.')[0] for ch in chNames}
@@ -14,6 +16,8 @@ class Preprocess:
     def run(self, filenames):
         raw = mne.io.concatenate_raws([mne.io.read_raw_edf(f, preload=True) for f in filenames])
         self.setup_channels(raw)
+        if (self.annotations):
+            raw.annotations.rename(self.annotations)
         rawFilt = raw.copy().filter(7, 30)
         if self.vizualize_ == True:
             raw.compute_psd(fmax=5).plot()
