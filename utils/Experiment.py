@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score
 import pickle
 import numpy as np
 from utils.CustomCSP import CustomCSP
+from utils.SingleClassTransf import SingleClassTransf
 from utils.annotations import annotations
 
 class Experiment:
@@ -59,25 +60,34 @@ class Experiment:
         raw = preprocessor.run(self.filenames)
         return raw
 
-
-    def train(self):
+    def get_data(self, raw):
+        X = None
+        y = None
+        events, event_id = mne.events_from_annotations(raw)
+        if len(event_id) < 2:
+            events = mne.make_fixed_length_events(raw, 1, duration=4) 
         tmin, tmax = -1.0, 4.0
-
-        raw = self.preprocess_data()
-        events, _ = mne.events_from_annotations(raw)
         picks = mne.pick_types(raw.info, eeg=True, meg=False, stim=False, eog=False, exclude="bads")
         epochs = mne.Epochs(raw, events,tmin=tmin, tmax=tmax, picks=picks, proj=True, baseline=None, preload=True)
         epochs_train = epochs.copy().crop(tmin=1.0, tmax=2.0)
-        labels = epochs.events[:, -1]
+        X = epochs_train.get_data()
+        y = epochs.events[:, -1]
+        return X, y
 
-        scores = []
-        epochs_data_train = epochs_train.get_data()
+    def train(self):
+        raw = self.preprocess_data()
+        X, y = self.get_data(raw)
         cv = ShuffleSplit(10, test_size=0.2, random_state=42)
-        customCsp = CustomCSP()
+        scores = []
         lda = LinearDiscriminantAnalysis()
-        clf = Pipeline([("CSP", customCsp), ("LDA", lda)])
-        clf.fit(epochs_data_train, labels)
-        scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=None)
+        if len(np.unique(y)) == 1:
+            transformer = SingleClassTransf()
+            clf = Pipeline([("SingleClassTransf", transformer), ("LDA", lda)])
+        else:
+            customCsp = CustomCSP()
+            clf = Pipeline([("CSP", customCsp), ("LDA", lda)])
+        clf.fit(X, y)
+        scores = cross_val_score(clf, X, y, cv=cv, n_jobs=None)
         self.model = clf
 
         self.save_model()
@@ -87,11 +97,7 @@ class Experiment:
         tmin, tmax = -1.0, 4.0
 
         raw = self.preprocess_data()
-        events, _ = mne.events_from_annotations(raw)
-        picks = mne.pick_types(raw.info, eeg=True, meg=False, stim=False, eog=False, exclude="bads")
-        epochs = mne.Epochs(raw, events,tmin=tmin, tmax=tmax, picks=picks, proj=True, baseline=None, preload=True)
-        X = epochs.get_data()
-        y = epochs.events[:, -1]
+        X, y = self.get_data(raw)
         indices = np.arange(len(X))
         np.random.shuffle(indices)
         X = X[indices]

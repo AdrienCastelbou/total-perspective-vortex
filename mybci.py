@@ -7,7 +7,7 @@ from utils.Experiment import Experiment
 
 def train_all_models():
     means = []
-    for run in range(3, 7):
+    for run in range(1, 7):
         experiment_means = []
         for subject in range(1, 39):
             experiment = Experiment(str(subject), str(run), True)
@@ -22,7 +22,7 @@ def train_all_models():
     
     print("Mean accuracy of the six different experiments for all 100 subjects:")
     for i in range(len(means)):
-        print(f"experiment {i}:    accuracy = {means[i]}")
+        print(f"experiment {i + 1}:    accuracy = {means[i]}")
     print(f"Mean accuracy of 6 experiments: {np.mean(means)}")
 
 
