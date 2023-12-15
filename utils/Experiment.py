@@ -65,8 +65,9 @@ class Experiment:
         X = None
         y = None
         events, event_id = mne.events_from_annotations(raw)
+
         if len(event_id) < 2:
-            events = mne.make_fixed_length_events(raw, 1, duration=4) 
+            events = mne.make_fixed_length_events(raw, next(iter(event_id.values())), duration=4) 
         tmin, tmax = -1.0, 4.0
         picks = mne.pick_types(raw.info, eeg=True, meg=False, stim=False, eog=False, exclude="bads")
         epochs = mne.Epochs(raw, events,tmin=tmin, tmax=tmax, picks=picks, proj=True, baseline=None, preload=True)
@@ -95,8 +96,6 @@ class Experiment:
         return scores
     
     def predict(self):
-        tmin, tmax = -1.0, 4.0
-
         raw = self.preprocess_data()
         X, y = self.get_data(raw)
         indices = np.arange(len(X))
