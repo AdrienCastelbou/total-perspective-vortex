@@ -12,6 +12,7 @@ import numpy as np
 from utils.CustomCSP import CustomCSP
 from utils.SingleClassTransf import SingleClassTransf
 from utils.annotations import annotations
+import time
 
 class Experiment:
     def __init__(self, subject, run, getAllRuns = False) -> None:
@@ -110,6 +111,7 @@ class Experiment:
             pred = self.model.predict(Xi)
             print(f"epoch {i}:  {pred}    [{y[i]}] {pred[0] == y[i]}")
             preds.append(pred)
+            time.sleep(0.5)
         print(f"Accuracy: {accuracy_score(preds, y)}")
 
     def save_model(self):
