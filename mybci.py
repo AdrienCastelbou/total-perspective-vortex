@@ -9,7 +9,7 @@ def train_all_models():
     means = []
     for run in range(1, 7):
         experiment_means = []
-        for subject in range(1, 39):
+        for subject in range(1, 110):
             try:
                 experiment = Experiment(str(subject), str(run), True)
                 scores = experiment.train()
