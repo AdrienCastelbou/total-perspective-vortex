@@ -80,7 +80,10 @@ class Experiment:
         raw = self.preprocess_data()
         X, y = self.get_data(raw)
         cv = ShuffleSplit(10, test_size=0.2, random_state=42)
+        cv_split = cv.split(X)
         scores = []
+        clfs = []
+
         lda = LinearDiscriminantAnalysis()
         if len(np.unique(y)) == 1:
             transformer = SingleClassTransf()
@@ -88,8 +91,14 @@ class Experiment:
         else:
             customCsp = CustomCSP()
             clf = Pipeline([("CSP", customCsp), ("LDA", lda)])
-        clf.fit(X, y)
-        scores = cross_val_score(clf, X, y, cv=cv, n_jobs=None)
+        for train_idx, test_idx in cv_split:
+            X_train, X_test = X[train_idx], X[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+            clf.fit(X_train, y_train)
+            preds = clf.predict(X_test)
+            scores.append(accuracy_score(preds, y_test))
+        max_idx = scores.index(max(scores))
+        clf = clfs[max_idx]
         self.model = clf
 
         self.save_model()
