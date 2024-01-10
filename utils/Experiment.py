@@ -118,4 +118,8 @@ class Experiment:
         print(f"Accuracy: {accuracy_score(preds, y)}")
 
     def save_model(self):
+        if os.path.isfile('models'):
+            os.remove('models')
+        if not os.path.exists('models'):
+            os.mkdir('models')
         pickle.dump(self.model, open(f"models/S{self.subject}{self.task}", 'wb'))
