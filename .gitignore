@@ -5,4 +5,4 @@
 /physionet.org/
 /.old/
 */__pycache__/
-/models/*
+/models/S*
