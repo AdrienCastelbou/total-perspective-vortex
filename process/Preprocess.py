@@ -20,8 +20,8 @@ class Preprocess:
             raw.annotations.rename(self.annotations)
         rawFilt = raw.copy().filter(7, 30)
         if self.vizualize_ == True:
-            raw.compute_psd(fmax=5).plot()
-            rawFilt.compute_psd(fmax=5).plot()
+            raw.compute_psd(fmax=50).plot()
+            rawFilt.compute_psd(fmax=50).plot()
             raw.plot()
             rawFilt.plot(block=True)
         return rawFilt
