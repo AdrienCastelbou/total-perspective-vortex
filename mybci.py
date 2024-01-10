@@ -6,31 +6,30 @@ from utils.Experiment import Experiment
  
 
 def train_all_models():
-    means = []
+    accuracies = []
     for run in range(1, 7):
         experiment_means = []
         for subject in range(1, 110):
             try:
                 experiment = Experiment(str(subject), str(run), True)
-                scores = experiment.train()
-                mean = np.mean(scores)
-                print(f"experiment {run}: subject {subject} = {mean}")
-                experiment_means.append(mean)
+                _, accuracy = experiment.train()
+                print(f"experiment {run}: subject {subject} = {accuracy}")
+                experiment_means.append(accuracy)
             except Exception as e:
                 print(f"Error occures during training on subject {subject}, experiment {run}: {e}")
         experiment_mean = np.mean(experiment_means)
-        means.append(experiment_mean)
+        accuracies.append(experiment_mean)
         print(f"experiment {run}:    accuracy = {experiment_mean}")
         print('-----------------------------------')
     
     print("Mean accuracy of the six different experiments for all 100 subjects:")
-    for i in range(len(means)):
-        print(f"experiment {i + 1}:    accuracy = {means[i]}")
-    print(f"Mean accuracy of 6 experiments: {np.mean(means)}")
+    for i in range(len(accuracies)):
+        print(f"experiment {i + 1}:    accuracy = {accuracies[i]}")
+    print(f"Mean accuracy of 6 experiments: {np.mean(accuracies)}")
 
 
 def train_one_model(experiment):
-    scores = experiment.train()
+    scores, _ = experiment.train()
     print(scores)
     print(f"cross_val_score: {np.mean(scores)}")
 
